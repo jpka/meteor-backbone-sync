@@ -1,0 +1,8 @@
+{
+  "name": "backbone-sync",
+  "description": "Backbone sync to persist with minimongo",
+  "homepage": "https://github.com/jpka/meteor-backbone-sync",
+  "author": "Juan Pablo Kaniefsky",
+  "version": "0.0.1",
+  "git": "https://github.com/jpka/meteor-backbone-sync.git"
+}
