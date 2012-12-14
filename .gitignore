@@ -1,2 +1,4 @@
 .meteor/
 smart.lock
+node_modules/
+build/

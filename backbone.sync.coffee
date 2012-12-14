@@ -5,23 +5,42 @@ methodTable =
   delete: "destroy"
 
 Backbone.miniMongoSync = (method, model, options, error) ->
-  db = model.db || model.collection.db
+  coll = model.mCollection || model.collection.mCollection
 
   # Backwards compatibility with Backbone <= 0.3.3
-  if typeof options == "function"
+  if typeof options is "function"
     options =
       success: options
       error: error
 
-  syncDfd = $.Deferred && $.Deferred(); #If $ is having Deferred - use it.
+  # if typeof coll is "string"
+  #   coll = new Meteor.Collection(coll)
+  #   if model.mCollection
+  #     model.mCollection = coll
+  #   else
+  #     model.collection.mCollection = coll
 
-  db[methodTable[method]] model.attributes, (error) ->
-    if error
-      options.error "Record not found"
-      syncDfd.reject() if syncDfd
-    else
-      options.success model
-      syncDfd.resolve() if syncDfd
+  syncDfd = $? and $.Deferred and $.Deferred() #If $ is having Deferred - use it.
+
+  #if Meteor.is_client
+  try
+    coll[methodTable[method]] model.attributes, (error, id) ->
+      if error
+        options.error model, "Record not found"
+        #model.trigger "error", model, null, options
+        syncDfd.reject() if syncDfd
+      else
+        options.success
+          id: id
+        #model.trigger "sync", model, null, options
+        syncDfd.resolve() if syncDfd
+  catch error
+    options.error error
+
+  # else if Meteor.is_server
+  #   id = coll[methodTable[method]] model.attributes
+  #   options.success
+  #     id: id
 
   # switch method
   #   when "read":
@@ -39,10 +58,14 @@ Backbone.miniMongoSync = (method, model, options, error) ->
 
 Backbone.ajaxSync = Backbone.sync
 
-# Override 'Backbone.sync' to detect if it is a minimongo model/collection or not
-# and decide a sync method accordingly
-Backbone.sync = (method, model, options, error) ->
-  if model.db or (model.collection and model.collection.db)
+#Decide which sync method to use
+Backbone.getSyncMethod = (model) ->
+  if Meteor.is_server or model.mCollection or (model.collection and model.collection.mCollection)
     Backbone.miniMongoSync
   else
     Backbone.ajaxSync
+
+# Override 'Backbone.sync' to detect if it is a minimongo model/collection or not
+# and use the appropiate sync method
+Backbone.sync = (method, model, options, error) ->
+  Backbone.getSyncMethod(model)(method, model, options, error)

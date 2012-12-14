@@ -1,0 +1,7 @@
+{
+  "name": "Meteor smart package for backbone syncing",
+  "version": "0.0.1",
+  "devDependencies": {
+    "grunt-contrib-coffee": "~0.3.2"
+  }
+}

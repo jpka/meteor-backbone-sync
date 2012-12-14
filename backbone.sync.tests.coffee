@@ -1,26 +1,116 @@
-Tinytest.add "Backbone.sync - defaults to ajax", (test) ->
-  m = new Backbone.Model()
+if Meteor.is_server
+  Tinytest.add "Backbone.sync - uses only mm", (test) ->
+    m = new Backbone.Model()
 
-  #remoteModel should use ajax sync
-  test.equal Backbone.getSyncMethod(m), Backbone.ajaxSync
+    #remoteModel should use ajax sync
+    test.equal Backbone.getSyncMethod(m), Backbone.miniMongoSync
 
-  #Backbone.sync should return a value when ajax is used."
-  test.notEqual m.fetch({url: "/"}), undefined
+    M = Backbone.Model.extend
+      mCollection: "collection"
+    m = new M()
 
-# module("Backbone.sync", _.extend(new Environment, {
+    test.equal Backbone.getSyncMethod(m), Backbone.miniMongoSync
 
-#     setup : function() {
-#       Environment.prototype.setup.apply(this, arguments);
-#       library = new Library;
-#       library.create(attrs, {wait: false});
-#     },
+if Meteor.is_client
+  Tinytest.add "Backbone.sync - defaults to ajax", (test) ->
+    m = new Backbone.Model()
 
-#     teardown: function() {
-#       Environment.prototype.teardown.apply(this, arguments);
-#       Backbone.emulateHTTP = false;
-#     }
+    #remoteModel should use ajax sync
+    test.equal Backbone.getSyncMethod(m), Backbone.ajaxSync
 
-#   }));
+    #Backbone.sync should return a value when ajax is used."
+    test.notEqual m.fetch({url: "/"}), undefined
+
+if Meteor.is_client
+  Tinytest.add "Backbone.sync - uses minimongo when a meteor collection is specified", (test) ->
+    M = Backbone.Model.extend
+      mCollection: "collection"
+    m = new M()
+
+    test.equal Backbone.getSyncMethod(m), Backbone.miniMongoSync
+
+attrs =
+  title: "The Tempest"
+  author: "Bill Shakespeare"
+  length: 123
+
+Library = Backbone.Collection.extend
+  mCollection: "library"
+
+mLibrary = new Meteor.Collection("library")
+if Meteor.is_server
+  mLibrary.allow
+    insert: -> true
+    remove: -> true
+    update: -> true
+
+Book = Backbone.Model.extend
+  idAttribute: "id"
+  mCollection: mLibrary
+
+setup = ->
+  mLibrary.remove {}
+
+tearDown = ->
+
+addTest = (desc, daTest) ->
+  Tinytest.add desc, (test) ->
+    setup()
+    daTest(test)
+    tearDown()
+
+addAsyncTest = (desc, daTest) ->
+  Tinytest.addAsync desc, (test, done) ->
+    setup()
+    daTest test, ->
+      tearDown()
+      done()
+
+addAsyncTest "Backbone.miniMongoSync - Model saves", (test, done) ->
+  book = new Book()
+  book.save attrs,
+    success: ->
+      rec = mLibrary.findOne(attrs)
+      test.equal (typeof rec._id), "string"
+      test.equal book.id, rec._id
+      done()
+    error: ->
+      test.fail()
+      done()
+
+addAsyncTest "Backbone.miniMongoSync - invalid model fails to save", (test, done) ->
+  book = new Book()
+  book.save {_id: "1"},
+    success: ->
+      test.fail()
+      done()
+    error: (model, error) ->
+      test.notEqual error, undefined
+      done()
+
+if Meteor.is_client
+  addAsyncTest "Backbone.miniMongoSync - save returns a promise", (test, done) ->
+    book = new Book()
+    book.save(attrs)
+      .done ->
+        test.ok(true)
+        done()
+
+    book.save({_id: "1"})
+      .fail ->
+        test.ok(true)
+        done()
+
+# Tinytest.add "Tinytest does not mantain state", (test) ->
+#   mLibrary.findOne attrs, (error, a) ->
+#     console.log error
+#     test.equal typeof id, "string"
+
+  # book = new Book(attrs)
+  # book.save
+  #   success: ->
+  #     mLibrary.findOne attrs, (error, id) ->
+  #       test.equal id, book.id
 
 #   test("read", 4, function() {
 #     library.fetch();

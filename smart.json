@@ -4,5 +4,8 @@
   "homepage": "https://github.com/jpka/meteor-backbone-sync",
   "author": "Juan Pablo Kaniefsky",
   "version": "0.0.1",
-  "git": "https://github.com/jpka/meteor-backbone-sync.git"
+  "git": "https://github.com/jpka/meteor-backbone-sync.git",
+  "meteor": {
+    "branch": "v0.5.2"
+  }
 }

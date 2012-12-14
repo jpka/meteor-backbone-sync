@@ -7,11 +7,12 @@ Package.on_use(function (api, where) {
   //api.use(["jquery", "json"]);
   
   where = where || ['client', 'server'];
-  api.use('backbone', where);
+  api.use('backbone', ['client', 'server']);
+  api.add_files('build/backbone.sync.js', ['client', 'server']);
 });
 
 Package.on_test(function (api) {
-  api.use(['minimongo', 'backbone'], 'client');
+  api.use(['minimongo', 'backbone'], ['client', 'server']);
   api.use('tinytest');
-  api.add_files('backbone.sync.tests.js', 'client');
+  api.add_files('build/backbone.sync.tests.js', ['client', 'server']);
 });
