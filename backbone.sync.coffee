@@ -1,58 +1,39 @@
-methodTable =
-  read: "findOne"
-  create: "insert"
-  update: "update"
-  delete: "destroy"
-
 Backbone.miniMongoSync = (method, model, options, error) ->
   coll = model.mCollection || model.collection.mCollection
 
-  # Backwards compatibility with Backbone <= 0.3.3
-  if typeof options is "function"
-    options =
-      success: options
-      error: error
-
-  # if typeof coll is "string"
-  #   coll = new Meteor.Collection(coll)
-  #   if model.mCollection
-  #     model.mCollection = coll
-  #   else
-  #     model.collection.mCollection = coll
-
   syncDfd = $? and $.Deferred and $.Deferred() #If $ is having Deferred - use it.
 
-  #if Meteor.is_client
+  callback = (error, ret=true) ->
+    if error
+      options.error error
+      #model.trigger "error", model, null, options
+      syncDfd.resolve() if syncDfd
+    else
+      options.success ret
+      #model.trigger "sync", model, null, options
+      syncDfd.reject() if syncDfd
+
   try
-    coll[methodTable[method]] model.attributes, (error, id) ->
-      if error
-        options.error model, "Record not found"
-        #model.trigger "error", model, null, options
-        syncDfd.reject() if syncDfd
-      else
-        options.success
-          id: id
-        #model.trigger "sync", model, null, options
-        syncDfd.resolve() if syncDfd
+    switch method
+      when "create"
+        coll.insert model.attributes, (error, id) ->
+          callback error, {id: id}
+      when "update"
+        coll.update {id: model.id}, {$set: model.attributes}, false, callback
+      when "read"
+        if model.attributes
+          ret = coll.findOne(model.attributes)
+        else
+          ret = coll.find().fetch()
+
+        error = null#if ret? not instanceof Array or ret.length > 0 then null else "Record not found"
+        callback error, ret
+      when "delete"
+        coll.remove {id: model.id}, callback
+
   catch error
     options.error error
-
-  # else if Meteor.is_server
-  #   id = coll[methodTable[method]] model.attributes
-  #   options.success
-  #     id: id
-
-  # switch method
-  #   when "read":
-  #     dbDo "findOne", model
-  #   when "create":
-  #     dbDo "insert", model
-  #   when "update":
-  #     dbDo "update", model
-  #     db.update model, cb
-  #   when "delete":
-
-  #     db.destroy model, cb
+    syncDfd.reject() if syncDfd
 
   syncDfd && syncDfd.promise()
 
@@ -60,7 +41,7 @@ Backbone.ajaxSync = Backbone.sync
 
 #Decide which sync method to use
 Backbone.getSyncMethod = (model) ->
-  if Meteor.is_server or model.mCollection or (model.collection and model.collection.mCollection)
+  if Meteor.is_server or model.mCollection or model.collection?.mCollection
     Backbone.miniMongoSync
   else
     Backbone.ajaxSync

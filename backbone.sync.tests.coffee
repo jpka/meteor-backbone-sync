@@ -34,10 +34,11 @@ attrs =
   author: "Bill Shakespeare"
   length: 123
 
-Library = Backbone.Collection.extend
-  mCollection: "library"
-
 mLibrary = new Meteor.Collection("library")
+
+Library = Backbone.Collection.extend
+  mCollection: mLibrary
+
 if Meteor.is_server
   mLibrary.allow
     insert: -> true
@@ -52,6 +53,7 @@ setup = ->
   mLibrary.remove {}
 
 tearDown = ->
+  mLibrary.remove {}
 
 addTest = (desc, daTest) ->
   Tinytest.add desc, (test) ->
@@ -66,7 +68,7 @@ addAsyncTest = (desc, daTest) ->
       tearDown()
       done()
 
-addAsyncTest "Backbone.miniMongoSync - Model saves", (test, done) ->
+addAsyncTest "Backbone.miniMongoSync - create", (test, done) ->
   book = new Book()
   book.save attrs,
     success: ->
@@ -99,7 +101,35 @@ if Meteor.is_client
     book.save({_id: "1"})
       .fail ->
         test.ok(true)
+
+  addAsyncTest "Backbone.miniMongoSync - update", (test, done) ->
+    book = new Book(attrs)
+    id = mLibrary.insert attrs
+    book.id = id
+
+    newAuthor = "William Shakespeare"
+    book.save {author: newAuthor},
+      success: ->
+        test.equal book.get("author"), newAuthor
+        console.log book.get("id")
+        test.equal mLibrary.findOne({_id: book.id}).author, newAuthor
         done()
+      error: ->
+        test.fail()
+        done()
+
+# addAsyncTest "Backbone.miniMongoSync - fetch", (test, done) ->  
+#   mLibrary.insert attrs
+#   library = new Library()
+
+#   #debugger
+#   library.fetch()
+#     .done ->
+#       test.equal library.models[0].attributes, mLibrary.findOne()
+#       done()
+#     .fail ->
+#       test.fail()
+#       done()
 
 # Tinytest.add "Tinytest does not mantain state", (test) ->
 #   mLibrary.findOne attrs, (error, a) ->
