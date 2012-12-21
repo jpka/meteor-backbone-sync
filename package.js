@@ -7,8 +7,8 @@ Package.on_use(function (api, where) {
   //api.use(["jquery", "json"]);
   
   where = where || ['client', 'server'];
-  api.use('backbone', ['client', 'server']);
-  api.add_files('build/backbone.sync.js', ['client', 'server']);
+  api.use('backbone', where);
+  api.add_files('build/backbone.sync.js', where);
 });
 
 Package.on_test(function (api) {

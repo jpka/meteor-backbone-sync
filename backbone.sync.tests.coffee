@@ -101,22 +101,22 @@ if Meteor.is_client
     book.save({_id: "1"})
       .fail ->
         test.ok(true)
-
-  addAsyncTest "Backbone.miniMongoSync - update", (test, done) ->
-    book = new Book(attrs)
-    id = mLibrary.insert attrs
-    book.id = id
-
-    newAuthor = "William Shakespeare"
-    book.save {author: newAuthor},
-      success: ->
-        test.equal book.get("author"), newAuthor
-        console.log book.get("id")
-        test.equal mLibrary.findOne({_id: book.id}).author, newAuthor
         done()
-      error: ->
-        test.fail()
-        done()
+
+addAsyncTest "Backbone.miniMongoSync - update", (test, done) ->
+  book = new Book(attrs)
+  id = mLibrary.insert attrs
+  book.set "id", id
+  newAuthor = "William Shakespeare"
+  book.save {author: newAuthor},
+    success: ->
+      test.equal book.get("author"), newAuthor
+      rec = mLibrary.findOne {_id: book.id}
+      test.equal rec.author, newAuthor
+      done()
+    error: ->
+      test.fail()
+      done()
 
 # addAsyncTest "Backbone.miniMongoSync - fetch", (test, done) ->  
 #   mLibrary.insert attrs

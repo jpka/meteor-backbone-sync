@@ -19,7 +19,12 @@ Backbone.miniMongoSync = (method, model, options, error) ->
         coll.insert model.attributes, (error, id) ->
           callback error, {id: id}
       when "update"
-        coll.update {id: model.id}, {$set: model.attributes}, false, callback
+        # coll.find({_id: model.id}).observe
+        #   changed: (doc) ->
+        #     callback()
+        delete model.attributes.id
+        coll.update {_id: model.id}, {$set: model.attributes}
+        callback()
       when "read"
         if model.attributes
           ret = coll.findOne(model.attributes)

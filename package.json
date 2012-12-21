@@ -3,6 +3,6 @@
   "version": "0.0.1",
   "devDependencies": {
     "grunt-contrib-coffee": "~0.3.2",
-    "meteorite": "~0.4.6"
+    "meteorite": "0.0.9"
   }
 }
