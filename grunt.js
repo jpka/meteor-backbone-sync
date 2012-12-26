@@ -6,12 +6,7 @@ module.exports = function(grunt) {
     coffee: {
       src: {
         files: {
-          "build/backbone.sync.js": "backbone.sync.coffee"
-        }
-      },
-      tests: {
-        files: {
-          "build/backbone.sync.tests.js": "backbone.sync.tests.coffee"
+          "build/*.js": "*.coffee"
         }
       }
     },

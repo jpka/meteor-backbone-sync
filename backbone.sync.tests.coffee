@@ -49,6 +49,11 @@ Book = Backbone.Model.extend
   idAttribute: "id"
   mCollection: mLibrary
 
+mLibrary2 = new Meteor.Collection("library2")
+
+Book2 = Backbone.Model.extend
+  mCollection: mLibrary2
+
 setup = ->
   mLibrary.remove {}
 
@@ -91,16 +96,15 @@ addAsyncTest "Backbone.miniMongoSync - invalid model fails to save", (test, done
       done()
 
 if Meteor.is_client
-  addAsyncTest "Backbone.miniMongoSync - save returns a promise", (test, done) ->
-    book = new Book()
-    book.save(attrs)
-      .done ->
-        test.ok(true)
-        done()
+  addAsyncTest "Backbone.miniMongoSync - create failure", (test, done) ->
+    book = new Book2(attrs)
 
-    book.save({_id: "1"})
-      .fail ->
-        test.ok(true)
+    book.save null,
+      success: ->
+        test.fail()
+        done()
+      error: (model, error) ->
+        test.notEqual error, undefined
         done()
 
 addAsyncTest "Backbone.miniMongoSync - update", (test, done) ->
@@ -117,6 +121,52 @@ addAsyncTest "Backbone.miniMongoSync - update", (test, done) ->
     error: ->
       test.fail()
       done()
+
+if Meteor.is_client
+  addAsyncTest "Backbone.miniMongoSync - update failure", (test, done) ->
+    book = new Book2(attrs)
+    id = mLibrary2.insert attrs
+    book.set "id", id
+
+    debugger
+    book.save
+      success: ->
+        test.fail()
+        done()
+      error: (model, error) ->
+        test.notEqual error, undefined
+        done()
+
+addAsyncTest "Backbone.miniMongoSync - fetch", (test, done) ->
+  book = new Book()
+  id = mLibrary.insert attrs
+  book.set "id", id
+  book.fetch
+    success: ->
+      test.equal book.get("title"), mLibrary.findOne().title
+      done()
+    error: ->
+      test.fail()
+      done()
+
+addAsyncTest "Backbone.miniMongoSync - delete", (test, done) ->
+  book = new Book(attrs)
+  id = mLibrary.insert attrs
+  book.set "id", id
+  book.destroy
+    success: ->
+      test.equal mLibrary.findOne(), undefined
+      done()
+    error: ->
+      test.fail()
+      done()
+
+# if Meteor.is_client
+#   addTest "Backbone.miniMongoSync - save, fetch and destroy returns promises", (test, done) ->
+#     book = new Book()
+#     test.equal typeof book.save().done, "function"
+#     test.equal typeof book.fetch().done, "function"
+#     test.equal typeof book.destroy().done, "function"
 
 # addAsyncTest "Backbone.miniMongoSync - fetch", (test, done) ->  
 #   mLibrary.insert attrs

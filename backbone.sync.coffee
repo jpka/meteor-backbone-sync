@@ -23,18 +23,18 @@ Backbone.miniMongoSync = (method, model, options, error) ->
         #   changed: (doc) ->
         #     callback()
         delete model.attributes.id
-        coll.update {_id: model.id}, {$set: model.attributes}
-        callback()
+        coll.update model.id, {$set: model.attributes}, {}, callback
       when "read"
         if model.attributes
-          ret = coll.findOne(model.attributes)
+          ret = coll.findOne(model.attributes.id)
         else
           ret = coll.find().fetch()
 
         error = null#if ret? not instanceof Array or ret.length > 0 then null else "Record not found"
         callback error, ret
       when "delete"
-        coll.remove {id: model.id}, callback
+        coll.remove model.id
+        callback()
 
   catch error
     options.error error
